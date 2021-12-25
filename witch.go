@@ -6,11 +6,9 @@ import (
     "reflect"
 )
 
-// type T interface {
-//     int | uint | string | float64
-// }
+type Errno int
 
-func process(x, val interface{}, method string) (int, bool, error) {
+func process(x, val interface{}, method string) (Errno, bool, error) {
     if !reflect.ValueOf(x).CanAddr() {
         x = reflect.ValueOf(x).Elem()
     }
@@ -20,25 +18,42 @@ func process(x, val interface{}, method string) (int, bool, error) {
 // Piu changes the value of given variable x, while setted is true,
 // we change the value with method Set() otherwise we use pointer to
 // change the that value
-func Piu(x, val interface{}, method string) (int, bool, error) {
+func Piu(x, val interface{}, method string) (Errno, bool, error) {
     ax := reflect.ValueOf(x).Elem()
-    //tx := reflect.TypeOf(x)
-    p := ax.Addr().Interface().(int)
+    typ := reflect.TypeOf(x).Kind()
 
-    if method == "ptr" {
-        if getType(x) == getType(val) {
-            p = val.(int)
-            return p, true, nil
-        } else {
-            return 0, false, UnmatchedType
+    // TODO: refactor belows code for common use
+    switch typ {
+    case reflect.Int:
+        p := ax.Addr().Interface().(int)
+        if method == "ptr" {
+            if getType(x) == getType(val) {
+                p = val.(int)
+                return Errno(p), true, nil
+            } else {
+                return -1, false, UnmatchedType
+            }
         }
-    } else if method == "set" {
+    case reflect.Uint:
+        p := ax.Addr().Interface().(uint)
+        if method == "ptr" {
+            if getType(x) == getType(val) {
+                p = val.(uint)
+                return Errno(p), true, nil
+            } else {
+                return -1, false, UnmatchedType
+            }
+        }
+    }
+
+    if method == "set" {
         res := reflect.ValueOf(val)
         ax.Set(res)
         return 0, true, nil
     } else {
-        return 0, false, UnknownMethod
+        return -1, false, UnknownMethod
     }
+    return -1, false, UnknownType
 }
 
 func set(a reflect.Value, v interface{}) (bool, error) {
@@ -66,7 +81,7 @@ func set(a reflect.Value, v interface{}) (bool, error) {
     }
 }
 
-// Xiu() undos modification
+// TODO: Xiu() undos modification
 func Xiu() (bool, error) {
     return true, nil
 }

@@ -29,7 +29,7 @@ import (
 
 func main() {
     // set variable x
-    witch.Piu(x)
+    witch.Piu(x, v, "ptr"[, "set"])
     // cancel changes
     witch.Xiu()
 }
